@@ -1,12 +1,8 @@
 package com.potarski.jdispatch.smtp;
 
-import com.potarski.jdispatch.domain.Email;
-import com.potarski.jdispatch.repository.EmailRepository;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,13 +10,9 @@ public class SMTPHandler {
 
     private final ChannelHandlerContext ctx;
 
-    @Autowired
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    private EmailRepository emailRepository;
     public static final AttributeKey<SMTPHandler> ATTRIBUTE_KEY = AttributeKey.valueOf("SMTP_HANDLER");
 
     private StringBuilder emailData;
-    private LocalDateTime emailTimestamp;
 
     private enum State {
         INIT,
@@ -41,7 +33,6 @@ public class SMTPHandler {
     public SMTPHandler(ChannelHandlerContext ctx) {
         this.ctx = ctx;
         this.emailData = new StringBuilder();
-        this.emailTimestamp = LocalDateTime.now();
         this.state = State.INIT;
 
         this.from = null;
@@ -128,28 +119,15 @@ public class SMTPHandler {
 
     private void handleEndOfEmail(ChannelHandlerContext ctx) {
 
-        Email assembledEmail = new Email.Builder()
-                .from(from)
-                .to(to)
-                .cc(cc)
-                .subject(subject)
-                .body(body.toString())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        System.out.println("Received email:");
-        System.out.println("From: " + from);
-        System.out.println("To: " + to);
-        System.out.println("Cc: " + cc);
-        System.out.println("Date: " + date);
-        System.out.println("Subject: " + subject);
-        System.out.println("Body: " + body);
-
-
+        System.out.println(Thread.currentThread().getId() + " Received email:");
+        System.out.println(Thread.currentThread().getId() + " From: " + from);
+        System.out.println(Thread.currentThread().getId() + " To: " + to);
+        System.out.println(Thread.currentThread().getId() + " Cc: " + cc);
+        System.out.println(Thread.currentThread().getId() + " Date: " + date);
+        System.out.println(Thread.currentThread().getId() + " Subject: " + subject);
+        System.out.println(Thread.currentThread().getId() + " Body: " + body);
 
         emailData.setLength(0);
-        emailTimestamp = LocalDateTime.now();
-
         sendResponse(ctx, "250 Ok");
     }
 
