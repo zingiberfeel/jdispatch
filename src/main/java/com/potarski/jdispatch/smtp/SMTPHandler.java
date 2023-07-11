@@ -2,6 +2,8 @@ package com.potarski.jdispatch.smtp;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,18 +51,10 @@ public class SMTPHandler {
     public void handle(String smtpLine, ChannelHandlerContext ctx) {
 
         switch (state) {
-            case INIT:
-                handleInitState(smtpLine, ctx);
-                break;
-            case MAIL:
-                handleMailState(smtpLine, ctx);
-                break;
-            case RCPT:
-                handleRcptState(smtpLine, ctx);
-                break;
-            case DATA:
-                handleDataState(smtpLine, ctx);
-                break;
+            case INIT -> handleInitState(smtpLine, ctx);
+            case MAIL -> handleMailState(smtpLine, ctx);
+            case RCPT -> handleRcptState(smtpLine, ctx);
+            case DATA -> handleDataState(smtpLine, ctx);
         }
     }
 
@@ -134,13 +128,18 @@ public class SMTPHandler {
 
     private void handleEndOfEmail(ChannelHandlerContext ctx) {
 
-        System.out.println(Thread.currentThread().getId() + " Received email:");
-        System.out.println(Thread.currentThread().getId() + " From: " + from);
-        System.out.println(Thread.currentThread().getId() + " To: " + to);
-        System.out.println(Thread.currentThread().getId() + " Cc: " + cc);
-        System.out.println(Thread.currentThread().getId() + " Date: " + date);
-        System.out.println(Thread.currentThread().getId() + " Subject: " + subject);
-        System.out.println(Thread.currentThread().getId() + " Body: " + body);
+        Logger logger = LoggerFactory.getLogger(SMTPHandler.class);
+
+        StringBuilder emailInfo = new StringBuilder();
+        emailInfo.append("Received email:\n");
+        emailInfo.append("From: ").append(from).append("\n");
+        emailInfo.append("To: ").append(to).append("\n");
+        emailInfo.append("Cc: ").append(cc).append("\n");
+        emailInfo.append("Date: ").append(date).append("\n");
+        emailInfo.append("Subject: ").append(subject).append("\n");
+        emailInfo.append("Body: ").append(body);
+
+        logger.info(emailInfo.toString());
 
         emailData.setLength(0);
         sendResponse(ctx, "250 Ok");
