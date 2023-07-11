@@ -4,7 +4,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 public class SMTPHandler {
 
@@ -99,19 +102,31 @@ public class SMTPHandler {
         } else {
             emailData.append(smtpLine).append("\r\n");
 
-            if (from == null && smtpLine.startsWith("From:")) {
-                from = smtpLine.substring(5).trim();
-            } else if (smtpLine.startsWith("To:")) {
-                to.add(smtpLine.substring(3).trim());
-            } else if (smtpLine.startsWith("Cc:")) {
-                cc.add(smtpLine.substring(3).trim());
-            } else if (date == null && smtpLine.startsWith("Date:")) {
-                date = smtpLine.substring(5).trim();
-            } else if (subject == null && smtpLine.startsWith("Subject:")) {
-                subject = smtpLine.substring(8).trim();
-            } else if (!smtpLine.startsWith("From:") && !smtpLine.startsWith("To:") &&
-                    !smtpLine.startsWith("Cc:") && !smtpLine.startsWith("Date:") &&
-                    !smtpLine.startsWith("Subject:")) {
+            Map<String, Consumer<String>> lineHandlers = new HashMap<>();
+            lineHandlers.put("From:", line -> from = line.substring(5).trim());
+            lineHandlers.put("To:", line -> to.add(line.substring(3).trim()));
+            lineHandlers.put("Cc:", line -> cc.add(line.substring(3).trim()));
+            lineHandlers.put("Date:", line -> {
+                if (date == null) {
+                    date = line.substring(5).trim();
+                }
+            });
+            lineHandlers.put("Subject:", line -> {
+                if (subject == null) {
+                    subject = line.substring(8).trim();
+                }
+            });
+
+            boolean isHandled = lineHandlers.entrySet().stream()
+                    .filter(entry -> smtpLine.startsWith(entry.getKey()))
+                    .findFirst()
+                    .map(entry -> {
+                        entry.getValue().accept(smtpLine);
+                        return true;
+                    })
+                    .orElse(false);
+
+            if (!isHandled) {
                 body.append(smtpLine).append("\r\n");
             }
         }
